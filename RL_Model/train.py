@@ -1,5 +1,5 @@
 # scripts/train.py
-from stable_baselines3.common.vec_env import DummyVecEnv
+# from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3 import PPO
 import gymnasium as gym
@@ -53,29 +53,39 @@ class PortfolioEnv(gym.Env):
 
     def step(self, action):
         action = np.clip(action, 0, 1)
+        prev_portfolio_value = self.portfolio_value  # ✅ save old value
 
         # Split stock vs cash
         weights = np.clip(action[:-1], 0, self.max_position_per_stock)  # stock weights
-        cash_weight = np.clip(action[-1], 0, 1)
+        # cash_weight = np.clip(action[-1], 0, 1)
 
-        stock_weights = weights  # no extra slicing!
+        # stock_weights = weights  # no extra slicing!
 
         current_prices = self.close_df.iloc[self.current_step].values
         prev_prices = self.close_df.iloc[self.current_step - 1].values
         returns = (current_prices - prev_prices) / prev_prices
+
+        # Normalize weights so they sum to 1 (including cash)
+        weights = np.clip(action, 0, 1)
+        weights /= np.sum(weights) + 1e-8
+
+        stock_weights = weights[:-1]
+        cash_weight = weights[-1]
 
         portfolio_return = np.dot(stock_weights, returns)
 
         turnover = np.sum(np.abs(stock_weights - self.portfolio_weights[:-1]))
         transaction_cost = 0.001 * turnover
         self.portfolio_value *= (1 - transaction_cost)
+        self.portfolio_value *= (1 + portfolio_return)
 
         self.net_worth_history.append(self.portfolio_value)
         self.portfolio_weights = np.append(stock_weights, cash_weight)
 
         risk = np.std(returns)
         # reward = self.portfolio_value / self.initial_balance - 1
-        reward = portfolio_return - 0.5 * risk
+        # reward = portfolio_return - 0.5 * risk
+        reward = np.log(self.portfolio_value / prev_portfolio_value)
 
         self.current_step += 1
         terminated = self.current_step >= len(self.close_df) - 1
@@ -105,9 +115,9 @@ def train():
     close_data = pd.read_pickle("data/stock_data.pkl")
 
     print("Creating environment...")
-    env = PortfolioEnv(close_data)
-    env = DummyVecEnv([lambda: env])
-    # env = SubprocVecEnv([make_env(close_data) for _ in range(4)])
+    # env = PortfolioEnv(close_data)
+    # env = DummyVecEnv([lambda: env])
+    env = SubprocVecEnv([make_env(close_data) for _ in range(4)])
 
     model = PPO(
         'MlpPolicy',  # Policy type: uses neural net to learn trading signals from price data
@@ -124,19 +134,19 @@ def train():
         # - ↑ Longer (e.g., 2048): Uses more data per update → smoother but slower learning
         # - ↓ Shorter (e.g., 512): Faster updates, more responsive to recent performance
         # → Range: [512–4096] → Analogous to review cycle (quarterly vs annual)
-        n_steps=64,
+        n_steps=4096,
 
         # 🔹 batch_size: "Sample size per strategy review"
         # - ↑ Larger (e.g., 128): Stable updates, but may overfit to recent period
         # - ↓ Smaller (e.g., 32): Noisier updates → more robust, less overconfident
         # → Range: [32–256] → Like basing review on 32 trades instead of 256
-        batch_size=32,
+        batch_size=64,
 
         # 🔹 n_epochs: "Number of times to refine strategy per review"
         # - ↑ More (e.g., 20): Learns deeply from same data → better utilization
         # - ↓ Less (e.g., 5): Risks underlearning from valuable feedback
         # → Range: [5–20] → Like re-analyzing last quarter’s trades multiple times
-        n_epochs=2,
+        n_epochs=20,
 
         # 🔹 gamma: "Patience / time horizon"
         # - ↑ High (0.99): Values long-term gains → patient, buy-and-hold style
@@ -176,12 +186,12 @@ def train():
 
         # 🔹 tensorboard_log: "Performance audit trail"
         # → Logs training metrics (P&L, drawdown, entropy) for monitoring & compliance
-        # tensorboard_log="./models/ppo_portfolio/"
+        # tensorboard_log="./mmodels/ppo_portfolio/"
         tensorboard_log=None
     )
 
     print("🚀 Training model...")
-    model.learn(total_timesteps=1000)
+    model.learn(total_timesteps=int(1e6))
     model.save("./models/ppo_portfolio_trading")
     print("✅ Model saved to models/ppo_portfolio_trading.zip")
 

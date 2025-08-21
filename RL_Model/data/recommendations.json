@@ -1,0 +1,60 @@
+{
+  "top_10_recommendations": [
+    {
+      "ticker": "CASH",
+      "name": "CASH",
+      "avg_allocation": 0.55
+    },
+    {
+      "ticker": "ZTS",
+      "name": "ZTS",
+      "avg_allocation": 0.55
+    },
+    {
+      "ticker": "WY",
+      "name": "WY",
+      "avg_allocation": 0.55
+    },
+    {
+      "ticker": "WFC",
+      "name": "WFC",
+      "avg_allocation": 0.55
+    },
+    {
+      "ticker": "TJX",
+      "name": "TJX",
+      "avg_allocation": 0.55
+    },
+    {
+      "ticker": "TTD",
+      "name": "TTD",
+      "avg_allocation": 0.55
+    },
+    {
+      "ticker": "TEL",
+      "name": "TEL",
+      "avg_allocation": 0.55
+    },
+    {
+      "ticker": "TDY",
+      "name": "TDY",
+      "avg_allocation": 0.55
+    },
+    {
+      "ticker": "TER",
+      "name": "TER",
+      "avg_allocation": 0.55
+    },
+    {
+      "ticker": "BBY",
+      "name": "BBY",
+      "avg_allocation": 0.55
+    }
+  ],
+  "profit": {
+    "rl_agent_final": 11669.66,
+    "buy_and_hold_final": 11402.27,
+    "outperformance": 267.39
+  },
+  "as_of": "2025-08-21 16:15:00"
+}

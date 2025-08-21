@@ -2,14 +2,16 @@
 import os
 import importlib
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 # === Config (overridable via ENV) ===
 DATA_PATH = os.environ.get("DATA_PATH", "./data/stock_data.pkl")
 MODEL_PREFIX = os.environ.get("MODEL_PREFIX", "./models/ppo_portfolio_trading")  # no .zip
 MODEL_ZIP = MODEL_PREFIX + ".zip"
-TEST_RESULTS_PATH = os.environ.get("TEST_RESULTS_PATH", "./data/recommendation.json")
+TEST_RESULTS_PATH = os.environ.get("TEST_RESULTS_PATH", "./data/recommendations.json")
 
 # --- Dynamic import of your evaluation function ---
 def _load_evaluator():
@@ -156,7 +158,7 @@ if __name__ == "__main__":
     import sys
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))
     host = os.environ.get("HOST", "0.0.0.0")
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 8080))
     debug = os.environ.get("FLASK_DEBUG", "false").lower() in ("1", "true", "yes")
     print(f"Starting merged API on http://{host}:{port}")
     app.run(host=host, port=port, debug=debug)

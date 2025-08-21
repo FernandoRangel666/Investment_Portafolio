@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Análisis de Tickers</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #ffffff;
+            --text-primary: #eef1f1;
+            --text-secondary: #969797;
+            --accent-color: #6c5ce7;
+            --border-color: #e9ecef;
+            --shadow-light: 0 2px 10px rgba(0,0,0,0.1);
+            --shadow-medium: 0 4px 20px rgba(0,0,0,0.15);
+            --success-color: #00b894;
+            --danger-color: #e17055;
+            --warning-color: #fdcb6e;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #413f3f;
+            min-height: 100vh;
+        }
+
+
+         /* Navbar Styles */
+         .navbar {
+            box-shadow: var(--shadow-light);
+            background:linear-gradient(135deg, #2d2d64 0%, #22315e 100%);
+            padding: 0 20px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+            height: 70px;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+
+
+
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-primary);
+        }
+
+        .user-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-color), #fd79a8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .settings-container {
+            position: relative;
+        }
+
+        .settings-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+            font-size: 18px;
+        }
+
+        .settings-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--accent-color);
+        }
+
+        .settings-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background:  rgba(46, 41, 77, 0.918);;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            box-shadow: var(--shadow-medium);
+            min-width: 200px;
+            padding: 10px 0;
+            display: none;
+            z-index: 1002;
+        }
+
+        .settings-menu.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .menu-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: background 0.2s ease;
+            color: var(--text-primary);
+        }
+
+        .menu-item:hover {
+            background: var(--bg-secondary);
+        }
+
+        .menu-separator {
+            height: 1px;
+            background: var(--border-color);
+            margin: 5px 0;
+        }
+
+        .toggle-switch {
+            width: 40px;
+            height: 20px;
+            background: var(--border-color);
+            border-radius: 10px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: var(--accent-color);
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: left 0.3s ease;
+        }
+
+        .toggle-switch.active::after {
+            left: 22px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(175, 173, 173, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            background: transparent;
+            color: rgb(193, 193, 194);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: var(--shadow-light);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-color), #fd79a8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: rgb(193, 193, 194);
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .controls {
+            background: transparent;
+            color: rgb(193, 193, 194);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .control-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            align-items: end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: 600;
+            color: rgb(193, 193, 194);
+            margin-bottom: 8px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        select, input {
+            padding: 10px 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            background: rgba(46, 41, 77, 0.918);
+            color: var(--text-primary);
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+            min-width: 150px;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .analyze-btn {
+            background: linear-gradient(135deg, #667eea 0%, #483e7e 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .analyze-btn:active {
+            transform: translateY(0);
+        }
+
+        .results {
+            display: none;
+            animation: fadeInUp 0.6s ease;
+        }
+
+        .results.show {
+            display: block;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chart-container {
+            background: transparent;
+            color: rgb(193, 193, 194);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-container h2 {
+            color: #e0e2e4;
+            margin-top: 30px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 2em;
+        }
+
+        .table-container {
+            background: rgba(175, 173, 173, 0.1);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .table-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+            color: white;
+        }
+
+        th {
+            background: rgba(175, 173, 173, 0.1);
+            font-weight: 600;
+            color: #e0e4e7;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 14px;
+        }
+
+        tbody tr:hover {
+            background: #2f1e449c;
+            transform: scale(1.01);
+            transition: all 0.3s ease;
+        }
+
+        .positive {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .negative {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .neutral {
+            color: #dee2e6;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #c4d0db;
+            font-size: 18px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .control-group {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+     <!-- Navbar -->
+     <nav class="navbar">
+        <div class="navbar-content">
+            <a href="#" class="logo">Quantia</a>
+
+            <div class="navbar-right">
+                <div class="user-info">
+                    <div class="user-avatar">AG</div>
+                    <span>Ana García</span>
+                </div>
+                
+                <div class="settings-container">
+                    <button class="settings-btn" id="settingsBtn">⚙️</button>
+                    <div class="settings-menu" id="settingsMenu">
+                        <div class="menu-item" id="accessibilityToggle">
+                            <span>Accesible Mode</span>
+                            <div class="toggle-switch" id="accessibilitySwitch"></div>
+                        </div>
+                        <div class="menu-item" id="stockLossToggle">
+                            <span>Stock Loss</span>
+                            <div class="toggle-switch active" id="stockLossSwitch"></div>
+                        </div>
+                        <div class="menu-separator"></div>
+                        <div class="menu-item" id="logoutBtn">
+                            <span>Log Out</span>
+                            <span>🚪</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+
+    <!-- Main Content-->
+    <div class="container">
+        <div class="header">
+            <h1>Predictive Analysis</h1>
+            <p>Analyze the performance of your favorite investments.</p>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <div class="form-group">
+                    <label class="control-label" for="ticker">Ticker:</label>
+                    <input type="text" class="ticker-input" id="ticker" placeholder="Ej: AAPL">
+                </div>
+                <div class="form-group">
+                    <label for="startDate">Initial Balance</label>
+                    <input type="text" id="startDate" placeholder="Ex. 20,000">
+                </div>
+
+                <div class="form-group">
+                    <label for="endDate">Investment Time</label>
+                    <input type="text" id="rendimiento" placeholder="Ex. 2">
+                </div>
+
+                <div class="form-group">
+                    <button class="analyze-btn" id="analyzeBtn">Analyze Data</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            Analyzing data, please wait...
+        </div>
+
+        <!-- Result -->
+        <div id="results" class="results">
+            <!-- Table-->
+            <div class="table-container">
+                <div class="table-header">
+                    <h2>Analysis Resultss</h2>
+                </div>
+                <table id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>Ticker</th>
+                            <th>Investment Allocation</th>
+                            <th>Expected Proffit</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                    </tbody>
+                </table>
+            </div>
+            <!-- Chart -->
+            <div class="chart-container">
+                <h2>Portoflio Value Across Time</h2>
+                <canvas id="priceChart" width="400" height="200" style="color: beige;"></canvas>
+            </div>    
+        </div>
+    </div>
+
+    <script>
+        let priceChart;
+    
+        async function analizarDatos() {
+            const ticker = document.getElementById("ticker").value;
+            const inversion = document.getElementById("startDate").value;
+            const rendimiento = document.getElementById("rendimiento").value;
+    
+            if (!ticker || !inversion || !rendimiento) {
+                return alert("Please complete all fields");
+            }
+    
+            const loadingDiv = document.getElementById("loading");
+            const resultadosDiv = document.getElementById("results");
+    
+            // Mostrar spinner y ocultar resultados
+            loadingDiv.style.display = "block";
+            resultadosDiv.classList.remove("show");
+    
+            try {
+                const response = await fetch("http://127.0.0.1:8080/predict", {                  
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ 
+                        ticker, 
+                        initial_balance: Number(inversion.replace(/,/g, '')), 
+                        years: Number(rendimiento) 
+                    })
+                });
+    
+                const text = await response.text();
+                console.log("📩 Raw server response:", text);
+    
+                let result;
+                try {
+                    result = JSON.parse(text);
+                } catch {
+                    console.error("❌ JSON parse error. Raw text:", text);
+                    return alert("Invalid Response from the server:\n" + text);
+                }
+    
+                if (!response.ok) {
+                    return alert("Server Error: " + JSON.stringify(result));
+                }
+
+                // Limpiar y mostrar resultados
+                resultadosDiv.innerHTML = "";
+                resultadosDiv.classList.add("show");
+
+                // 📊 Resumen
+                const metricsDiv = document.createElement("div");
+                metricsDiv.classList.add("table-container");
+                metricsDiv.innerHTML = `
+                    <div class="table-header"><h2>Analysis Summary</h2></div>
+                    <table>
+                        <tbody>
+                            <tr><th>Ticker</th><td>${result.ticker}</td></tr>
+                            <tr><th>Initial Balance</th><td>$${result.initial_balance.toLocaleString()}</td></tr>
+                            <tr><th>Expected Profit</th><td>$${result.estimated_final_value.toLocaleString()}</td></tr>
+                            <tr><th>Total Profit</th><td>${((result.estimated_final_value - result.initial_balance) / result.initial_balance * 100).toFixed(2)} %</td></tr>
+                            <tr><th>Anual Performance</th><td>${(result.annualized_return * 100).toFixed(2)} %</td></tr>
+                            <tr><th>Allocation</th><td>${(result.avg_allocation * 100).toFixed(2)} %</td></tr>
+                        </tbody>
+                    </table>
+                `;
+                resultadosDiv.appendChild(metricsDiv);
+
+                // 📖 Análisis (si viene del backend)
+                if (result.analysis) {
+                    const analisisDiv = document.createElement("div");
+                    analisisDiv.innerHTML = `<h2>Analysis:</h2><p>${result.analysis}</p>`;
+                    resultadosDiv.appendChild(analisisDiv);
+                }
+
+                // 📈 Gráfico de portafolio
+                if (result.graph_data) {
+                    const card = document.createElement("div");
+                    card.classList.add("chart-container");
+                    card.innerHTML = `<h2>Portfolio Value across time</h2><canvas id="chart0"></canvas>`;
+                    resultadosDiv.appendChild(card);
+                    updateChart(result.graph_data, "chart0");
+                }
+    
+            } catch (error) {
+                console.error("⚠️ Conecction Error:", error);
+                alert("Can't reach the server");
+            } finally {
+                // Ocultar spinner pase lo que pase
+                loadingDiv.style.display = "none";
+            }
+        }
+    
+        function updateChart(graphData, canvasId) {
+            const ctx = document.getElementById(canvasId).getContext("2d");
+            if (priceChart) {
+                priceChart.destroy();
+            }
+        
+            priceChart = new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: graphData.dates,
+                    datasets: [{
+                        label: "Portfolio Value",
+                        data: graphData.portfolio_value,
+                        borderColor: "rgb(75, 192, 192)",
+                        backgroundColor: "rgba(75, 192, 192, 0.2)",
+                        fill: true,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#e0e2e4', // Color for legend text
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        },
+                        tooltip: {
+                            titleColor: '#e0e2e4',
+                            bodyColor: '#e0e2e4'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Dates',
+                                color: '#e0e2e4'
+                            },
+                            ticks: {
+                                color: '#e0e2e4', // ✅ This changes the date/label color on X-axis
+                                font: {
+                                    size: 12
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(200, 200, 200, 0.1)' // Optional: change grid line color
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Value ($)',
+                                color: '#e0e2e4'
+                            },
+                            ticks: {
+                                color: '#e0e2e4', // ✅ This changes the numbers on Y-axis
+                                font: {
+                                    size: 12
+                                },
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(200, 200, 200, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    
+        // 🔑 Conectar botón
+        document.getElementById("analyzeBtn").addEventListener("click", analizarDatos);
+    </script>
+    
+          
+    
+</body>
+</html>

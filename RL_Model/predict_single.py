@@ -117,7 +117,11 @@ def evaluate_single_stock_profit(
             break
 
     # Convert to DataFrame
-    weights_df = pd.DataFrame(all_weights, columns=list(close_data_sliced.columns) + ["CASH"])
+    # weights_df = pd.DataFrame(all_weights, columns=list(close_data_sliced.columns) + ["CASH"])
+    weights_df = pd.DataFrame(
+        all_weights,
+        columns=list(close_data_sliced.columns) + ["CASH"]
+    )[[ticker, "CASH"]]  # <-- solo el ticker pedido + cash
 
     # Get average allocation to this stock
     avg_allocation = weights_df[ticker].mean()
@@ -165,6 +169,21 @@ def evaluate_single_stock_profit(
 
     env.close()
 
+    # Dates for alignment
+    dates = close_data_sliced.index[-len(portfolio_value):].strftime("%Y-%m-%d").tolist()
+
+    # Prepare JSON-friendly graph data
+    # graph_data = {
+    #     "dates": dates,
+    #     "portfolio_value": portfolio_value,
+    #     "allocations": weights_df.to_dict(orient="records"),  # list of daily dicts {TICKER: w, CASH: w}
+    # }
+    graph_data = {
+        "dates": close_data_sliced.index[-len(portfolio_value):].strftime("%Y-%m-%d").tolist(),
+        "portfolio_value": portfolio_value,
+        "allocations": weights_df.to_dict(orient="records")  # ahora solo trae {ticker, CASH}
+    }
+
     return {
         "ticker": ticker,
         "avg_allocation": round(float(avg_allocation), 3),
@@ -173,6 +192,7 @@ def evaluate_single_stock_profit(
         "years_requested": round(float(planned_years), 2),
         "years_used": round(float(used_years), 2),
         "initial_balance": round(float(initial_capital), 2),
+        "graph_data": graph_data,  # <-- new
     }
 
 

@@ -14,7 +14,7 @@ def fetch_data():
     selected_tickers = load_tickers()
 
     print(f"Downloading data for {len(selected_tickers)} stocks...")
-    start_date = "2020-08-01"
+    start_date = "2015-08-01"
     end_date = "2025-08-01"
     data = yf.download(selected_tickers, start=start_date, end=end_date, group_by='ticker', auto_adjust=True)
 
@@ -24,7 +24,12 @@ def fetch_data():
         axis=1,
         keys=selected_tickers  # preserves the ticker names as column names
     )
+
+    # min_required = pd.Timestamp("2015-08-01")
+    # valid_tickers = [t for t in selected_tickers if data[t]["Close"].first_valid_index() <= min_required]
+
     close_data.dropna(inplace=True)
+    # close_data = close_data.ffill().dropna(how="all")
 
     close_data.to_pickle("./data/stock_data.pkl")
     print(f"✅ Saved price data to data/stock_data.pkl (shape: {close_data.shape})")
